@@ -50,9 +50,15 @@ def search_stock(keyword):
         if not name_match.empty:
             # 返回第一个匹配项
             return name_match.iloc[0]['code'], name_match.iloc[0]['name']
-            
+        
+        code_candidate = keyword.strip()
+        if code_candidate.isdigit() and len(code_candidate) == 6:
+            return code_candidate, code_candidate
         return None, None
     except Exception as e:
+        code_candidate = keyword.strip()
+        if code_candidate.isdigit() and len(code_candidate) == 6:
+            return code_candidate, code_candidate
         return None, str(e)
 
 # 数据获取函数
