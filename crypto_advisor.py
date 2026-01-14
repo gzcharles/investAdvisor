@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from openai import OpenAI
 import datetime
 import requests
+import os
 
 # 设置页面配置
 st.set_page_config(
@@ -16,9 +17,9 @@ st.set_page_config(
 # 侧边栏配置
 st.sidebar.title("配置")
 
-# DeepSeek API 配置
+default_api_key = os.getenv("DEEPSEEK_API_KEY", "")
 st.sidebar.subheader("AI 模型配置")
-api_key = st.sidebar.text_input("DeepSeek API Key", type="password", help="请输入您的 DeepSeek API Key")
+api_key = st.sidebar.text_input("DeepSeek API Key", value=default_api_key, type="password", help="请输入您的 DeepSeek API Key")
 base_url = st.sidebar.text_input("API Base URL", value="https://api.deepseek.com")
 model_name = st.sidebar.text_input("模型名称", value="deepseek-chat")
 
@@ -38,7 +39,7 @@ if "chat_messages" not in st.session_state:
 
 # 网络代理配置
 st.sidebar.subheader("网络设置")
-use_proxy = st.sidebar.checkbox("使用代理", value=True)
+use_proxy = st.sidebar.checkbox("使用代理", value=False)
 http_proxy = st.sidebar.text_input("HTTP 代理", value="http://127.0.0.1:8001", disabled=not use_proxy)
 https_proxy = st.sidebar.text_input("HTTPS 代理", value="http://127.0.0.1:8001", disabled=not use_proxy)
 
