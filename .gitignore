@@ -153,7 +153,3 @@ cython_debug/
 
 # Mac
 .DS_Store
-
-# Streamlit
-.streamlit/secrets.toml
-.streamlit/credentials.toml
