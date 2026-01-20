@@ -38,22 +38,42 @@ if "ashare_chat_messages" not in st.session_state:
 @st.cache_data(ttl=3600)
 def search_stock(keyword):
     try:
-        # 获取所有A股股票列表
-        stock_info_df = ak.stock_info_a_code_name()
-        # 尝试完全匹配代码
-        code_match = stock_info_df[stock_info_df['code'] == keyword]
-        if not code_match.empty:
-            return code_match.iloc[0]['code'], code_match.iloc[0]['name']
+        # 1. 获取所有A股股票列表
+        try:
+            stock_info_df = ak.stock_info_a_code_name()
+            # 尝试完全匹配代码
+            code_match = stock_info_df[stock_info_df['code'] == keyword]
+            if not code_match.empty:
+                return code_match.iloc[0]['code'], code_match.iloc[0]['name']
+            
+            # 尝试匹配名称
+            name_match = stock_info_df[stock_info_df['name'].str.contains(keyword)]
+            if not name_match.empty:
+                # 返回第一个匹配项
+                return name_match.iloc[0]['code'], name_match.iloc[0]['name']
+        except:
+            pass
         
-        # 尝试匹配名称
-        name_match = stock_info_df[stock_info_df['name'].str.contains(keyword)]
-        if not name_match.empty:
-            # 返回第一个匹配项
-            return name_match.iloc[0]['code'], name_match.iloc[0]['name']
+        # 2. 如果A股没找到，尝试搜索ETF列表
+        try:
+            etf_df = ak.fund_etf_fund_daily_em()
+            # 尝试完全匹配ETF代码
+            etf_code_match = etf_df[etf_df['基金代码'] == keyword]
+            if not etf_code_match.empty:
+                return etf_code_match.iloc[0]['基金代码'], etf_code_match.iloc[0]['基金简称']
+            
+            # 尝试匹配ETF名称
+            etf_name_match = etf_df[etf_df['基金简称'].str.contains(keyword)]
+            if not etf_name_match.empty:
+                return etf_name_match.iloc[0]['基金代码'], etf_name_match.iloc[0]['基金简称']
+        except:
+            pass
         
+        # 3. 如果都没找到，但输入的是6位数字，则直接返回（兜底策略）
         code_candidate = keyword.strip()
         if code_candidate.isdigit() and len(code_candidate) == 6:
             return code_candidate, code_candidate
+            
         return None, None
     except Exception as e:
         code_candidate = keyword.strip()
