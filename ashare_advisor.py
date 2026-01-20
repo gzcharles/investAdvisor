@@ -73,10 +73,21 @@ def fetch_ashare_data(symbol, days):
         end_date_str = end_date.strftime("%Y%m%d")
         
         # 获取日线数据
-        df = ak.stock_zh_a_hist(symbol=symbol, period="daily", start_date=start_date_str, end_date=end_date_str, adjust="qfq")
+        # 1. 尝试作为普通股票获取
+        try:
+            df = ak.stock_zh_a_hist(symbol=symbol, period="daily", start_date=start_date_str, end_date=end_date_str, adjust="qfq")
+        except:
+            df = pd.DataFrame()
         
+        # 2. 如果为空且代码看起来像ETF，尝试作为ETF获取
+        if df.empty and symbol.isdigit() and len(symbol) == 6:
+             try:
+                df = ak.fund_etf_hist_em(symbol=symbol, period="daily", start_date=start_date_str, end_date=end_date_str, adjust="qfq")
+             except:
+                pass
+
         if df.empty:
-            return None, "未获取到数据，请检查股票代码是否正确或近期是否停牌。"
+            return None, "未获取到数据，请检查股票/ETF代码是否正确或近期是否停牌。"
             
         # 重命名列以符合习惯
         df = df.rename(columns={
