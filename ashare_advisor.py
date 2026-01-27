@@ -15,6 +15,7 @@ st.set_page_config(
 
 # 侧边栏配置
 st.sidebar.title("配置")
+st.sidebar.write(f"AKShare 版本: {ak.__version__}")
 
 # DeepSeek API 配置
 default_api_key = os.getenv("DEEPSEEK_API_KEY", "")
