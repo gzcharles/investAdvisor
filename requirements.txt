@@ -4,4 +4,4 @@ pandas
 plotly
 openai
 requests
-akshare
+akshare == 1.18.19
