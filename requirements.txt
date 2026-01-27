@@ -5,3 +5,4 @@ plotly
 openai
 requests
 akshare == 1.18.19
+baostock

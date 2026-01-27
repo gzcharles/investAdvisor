@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from openai import OpenAI
 import os
 import datetime
+import baostock as bs
 
 # 设置页面配置
 st.set_page_config(
@@ -86,39 +87,73 @@ def search_stock(keyword):
 @st.cache_data(ttl=300)
 def fetch_ashare_data(symbol, days):
     try:
-        # 计算起始日期
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=days * 2) # 多取一些天数以确保交易日足够
+        start_date = end_date - datetime.timedelta(days=days * 2)
         
         start_date_str = start_date.strftime("%Y%m%d")
         end_date_str = end_date.strftime("%Y%m%d")
+        start_date_bs = start_date.strftime("%Y-%m-%d")
+        end_date_bs = end_date.strftime("%Y-%m-%d")
         
-        # 获取日线数据
-        # 1. 尝试作为普通股票获取
         try:
             df = ak.stock_zh_a_hist(symbol=symbol, period="daily", start_date=start_date_str, end_date=end_date_str, adjust="qfq")
         except:
             df = pd.DataFrame()
         
-        # 2. 如果为空且代码看起来像ETF，尝试作为ETF获取
         if df.empty and symbol.isdigit() and len(symbol) == 6:
              try:
                 df = ak.fund_etf_hist_em(symbol=symbol, period="daily", start_date=start_date_str, end_date=end_date_str, adjust="qfq")
              except:
                 pass
 
+        if df.empty and symbol.isdigit() and len(symbol) == 6:
+            bs_symbol = None
+            if symbol.startswith(("6", "9")):
+                bs_symbol = f"sh.{symbol}"
+            elif symbol.startswith(("0", "2", "3")):
+                bs_symbol = f"sz.{symbol}"
+            if bs_symbol:
+                try:
+                    lg = bs.login()
+                    if lg.error_code == "0":
+                        rs = bs.query_history_k_data_plus(
+                            bs_symbol,
+                            "date,open,high,low,close,volume",
+                            start_date=start_date_bs,
+                            end_date=end_date_bs,
+                            frequency="d",
+                            adjustflag="2",
+                        )
+                        data_list = []
+                        while rs.error_code == "0" and rs.next():
+                            data_list.append(rs.get_row_data())
+                        if data_list:
+                            df = pd.DataFrame(data_list, columns=rs.fields)
+                    bs.logout()
+                except:
+                    pass
+
         if df.empty:
             return None, "未获取到数据，请检查股票/ETF代码是否正确或近期是否停牌。"
             
-        # 重命名列以符合习惯
-        df = df.rename(columns={
-            "日期": "timestamp",
-            "开盘": "open",
-            "最高": "high",
-            "最低": "low",
-            "收盘": "close",
-            "成交量": "volume"
-        })
+        if "日期" in df.columns:
+            df = df.rename(columns={
+                "日期": "timestamp",
+                "开盘": "open",
+                "最高": "high",
+                "最低": "low",
+                "收盘": "close",
+                "成交量": "volume"
+            })
+        else:
+            df = df.rename(columns={
+                "date": "timestamp",
+                "open": "open",
+                "high": "high",
+                "low": "low",
+                "close": "close",
+                "volume": "volume"
+            })
         
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         
